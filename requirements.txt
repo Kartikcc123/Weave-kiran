@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+websockets
+ultralytics
+opencv-python
+motor
+python-dotenv
