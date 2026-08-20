@@ -1,0 +1,20 @@
+venv/
+__pycache__/
+*.pyc
+.env
+node_modules/
+app/node_modules/
+app/dist/
+
+# Python cache
+.pytest_cache/
+
+# IDE
+.vscode/
+
+# YOLO generated
+runs/
+training/runs/
+
+# Optional: datasets ko GitHub par mat daalna
+datasets/
