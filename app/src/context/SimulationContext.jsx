@@ -13,6 +13,13 @@ export function SimulationProvider({ children }) {
   
   // Production / Backend Status
   const [backendStatus, setBackendStatus] = useState(null);
+
+  // Live production data from Arduino (via backend)
+  const [production, setProduction] = useState({
+    arduino_connected: false,
+    fabric_speed: null,
+    fabric_inspected: null
+  });
   
   // Live Events
   const [recentDetections, setRecentDetections] = useState([]);
@@ -50,7 +57,7 @@ export function SimulationProvider({ children }) {
           type: e.defect_type,
           confidence: e.confidence,
           severity: e.severity,
-          fabricPosition: '—'
+          fabricPosition: e.fabric_position != null ? `${e.fabric_position} m` : '—'
         }));
         setRecentDetections(mappedHistory);
       }
@@ -97,6 +104,11 @@ export function SimulationProvider({ children }) {
             });
           }
 
+          // Update production data (Arduino)
+          if (payload.production) {
+            setProduction(payload.production);
+          }
+
           // Handle NEW events (adding brand new rows to recent detections)
           if (payload.new_events && payload.new_events.length > 0) {
             const timestampStr = payload.timestamp;
@@ -108,7 +120,7 @@ export function SimulationProvider({ children }) {
                 type: e.defect_type || e.class_name, // e.defect_type is the new field
                 confidence: e.confidence, // This is max_confidence from backend
                 severity: e.severity,
-                fabricPosition: '—'
+                fabricPosition: e.fabric_position != null ? `${e.fabric_position} m` : '—'
             }));
 
             setRecentDetections(curr => {
@@ -189,6 +201,7 @@ export function SimulationProvider({ children }) {
     <SimulationContext.Provider value={{
       stats,
       backendStatus,
+      production,
       recentDetections,
       currentDefect,
       wsStatus

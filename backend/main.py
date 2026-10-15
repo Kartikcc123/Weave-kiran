@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from camera import get_camera
 from detector import detect
+from arduino import arduino
 
 app = FastAPI(title="Fabric AI Backend")
 
@@ -48,6 +49,10 @@ class State:
         self.track_timeout = 2.0 # seconds before track is CLOSED
         self.iou_threshold = 0.3
         self.distance_threshold = 150 # pixels fallback
+
+        # Arduino buzzer
+        self.last_beep_time = 0.0
+        self.beep_cooldown = 1.0 # min seconds between beeps (avoids beep bursts)
 
 state = State()
 
@@ -100,6 +105,16 @@ def get_severity(confidence):
     if confidence >= 0.80: return "HIGH"
     if confidence >= 0.60: return "MEDIUM"
     return "LOW"
+
+def maybe_alert(track, now):
+    """Beep ONCE per physical defect (track) when it first reaches MEDIUM/HIGH."""
+    if track.get("alerted") or track["severity"] not in ("MEDIUM", "HIGH"):
+        return
+    track["alerted"] = True # mark even if cooldown skips, so it never beeps later
+    if now - state.last_beep_time >= state.beep_cooldown:
+        state.last_beep_time = now
+        arduino.beep(track["severity"])
+        print(f"[ALERT] Beep for track_id={track['track_id']} severity={track['severity']}")
 
 def match_track(d, tracks, iou_thresh, dist_thresh):
     cx, cy = get_center(d["bbox"])
@@ -187,6 +202,7 @@ async def async_background_loop():
                         
                     match["max_confidence"] = new_conf
                     match["severity"] = get_severity(new_conf)
+                    maybe_alert(match, current_time)
                     current_detections.append(match)
                     
                 else:
@@ -207,7 +223,9 @@ async def async_background_loop():
                         "severity": get_severity(d["confidence"]),
                         "last_seen": current_time,
                         "start_time": current_time,
-                        "reported_major": False
+                        "reported_major": False,
+                        "alerted": False,
+                        "fabric_position": arduino.fabric_meters
                     }
                     
                     print(f"[YOLO] {new_track['class_name']} {new_track['max_confidence']}")
@@ -216,6 +234,7 @@ async def async_background_loop():
                     
                     state.active_tracks[tid] = new_track
                     current_detections.append(new_track)
+                    maybe_alert(new_track, current_time)
                     
                     # Increment stats once per physical defect
                     state.total_defects += 1
@@ -237,6 +256,7 @@ async def async_background_loop():
                         "severity": new_track["severity"],
                         "timestamp": datetime.now().isoformat(),
                         "bbox": new_track["bbox"],
+                        "fabric_position": new_track["fabric_position"],
                         "status": "OPEN"
                     }
                     
@@ -283,7 +303,8 @@ async def async_background_loop():
                         "total_defects": state.total_defects,
                         "major_defects": state.major_defects,
                         "defect_counts": state.defect_counts
-                    }
+                    },
+                    "production": arduino.status()
                 }
                 
                 
@@ -307,10 +328,12 @@ async def async_background_loop():
 @app.on_event("startup")
 async def startup_event():
     await db.connect()
+    arduino.start()
     asyncio.create_task(async_background_loop())
     
 @app.on_event("shutdown")
 async def shutdown_event():
+    arduino.stop()
     db.disconnect()
 
 async def video_generator():
@@ -351,7 +374,8 @@ def get_status():
         "loom_id": "LOOM-01",
         "model": "YOLO26s",
         "camera": "DroidCam",
-        "camera_index": 1
+        "camera_index": 1,
+        **arduino.status()
     }
 
 @app.get("/stats")

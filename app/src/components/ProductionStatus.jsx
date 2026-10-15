@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSimulation } from '../context/SimulationContext';
 
 export default function ProductionStatus() {
-  const { backendStatus } = useSimulation();
+  const { backendStatus, production } = useSimulation();
   
   // Calculate inspection runtime
   const [runtimeStr, setRuntimeStr] = useState("00:00:00");
@@ -39,12 +39,28 @@ export default function ProductionStatus() {
           )}
         </div>
         <div className="flex justify-between items-center py-2 border-b border-[#E5E5E5]">
+          <span className="text-[#666666]">Arduino:</span>
+          {production?.arduino_connected ? (
+             <span className="font-bold text-[#16A34A]">CONNECTED</span>
+          ) : (
+             <span className="font-bold text-[#DC2626]">NOT CONNECTED</span>
+          )}
+        </div>
+        <div className="flex justify-between items-center py-2 border-b border-[#E5E5E5]">
           <span className="text-[#666666]">Fabric Speed:</span>
-          <span className="font-bold text-[#666666]">—</span>
+          {production?.fabric_speed != null ? (
+             <span className="font-bold text-[#111111]">{production.fabric_speed.toFixed(2)} m/min</span>
+          ) : (
+             <span className="font-bold text-[#666666]">—</span>
+          )}
         </div>
         <div className="flex justify-between items-center py-2 border-b border-[#E5E5E5]">
           <span className="text-[#666666]">Fabric Inspected:</span>
-          <span className="font-bold text-[#666666]">Not available</span>
+          {production?.fabric_inspected != null ? (
+             <span className="font-bold text-[#111111]">{production.fabric_inspected.toFixed(2)} m</span>
+          ) : (
+             <span className="font-bold text-[#666666]">Not available</span>
+          )}
         </div>
         <div className="flex justify-between items-center py-2 border-b border-[#E5E5E5]">
           <span className="text-[#666666]">Current Roll:</span>

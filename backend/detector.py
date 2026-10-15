@@ -1,6 +1,6 @@
 from ultralytics import YOLO
 
-MODEL_PATH = r"D:\fabric-ai\best.pt"
+MODEL_PATH = r"F:\Weave-kiran\best.pt"
 
 model = YOLO(MODEL_PATH)
 

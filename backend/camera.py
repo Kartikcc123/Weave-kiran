@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Change this in your .env file to switch cameras (e.g., 0, 1, 2)
-CAMERA_INDEX = int(os.getenv("CAMERA_INDEX", 1))
+CAMERA_INDEX = int(os.getenv("CAMERA_INDEX", 0))
 
 def init_camera():
     print(f"[CAMERA] Attempting to open camera at index {CAMERA_INDEX}...")
