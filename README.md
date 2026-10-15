@@ -148,19 +148,6 @@ Open **`http://localhost:5173`** in your browser to view the live dashboard.
 
 ---
 
-## 🌐 Remote Factory Deployment (300 km Remote Access)
-
-To monitor the loom from anywhere without port forwarding:
-1. **Local Factory Unit**: Connect Camera & Arduino to the factory PC running the backend.
-2. **Expose with Cloudflare Tunnel (Free & Secure)**:
-   ```bash
-   # Download cloudflared on the factory PC
-   cloudflared tunnel --url http://localhost:8000
-   ```
-3. Copy the generated `https://*.trycloudflare.com` URL to view live feed and telemetry on your phone or laptop from anywhere in the world!
-
----
-
 ## 🛡️ License
 Distributed under the MIT License. See `LICENSE` for more information.
 
